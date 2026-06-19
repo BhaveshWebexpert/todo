@@ -15,7 +15,7 @@ const registerUser = async (req, res) => {
         const user = new User({ name, email, password });
         await user.save();
 
-        return res.redirect('/login');
+        return res.status(500).json({ status: true, message: "User is registered successfully....", data:user });
 
     } catch (e) {
         console.error("Error while registering user : ", e);
@@ -28,7 +28,7 @@ const loginUser = async (req, res) => {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
 
-        if (!user) return res.status(400).json({ message: "Entered email does not exists." });
+        if (!user) return res.status(400).json({ error: "Entered email does not exists." });
 
         const matching = await bcrypt.compare(password, user.password);
         if (!matching) return res.status(400).json({ message: "Invalid Credentials." });
@@ -46,6 +46,11 @@ const loginUser = async (req, res) => {
             jti,
             name: req.body.device_name || "default",
             expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+        });
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
         });
 
         return res.status(200).json({ status: true, message: "User is Login successfully.", token });

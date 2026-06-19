@@ -1,28 +1,34 @@
-import jwt from 'jsonwebtoken'
-import config from '../config/EnvVar.js'
-import User from '../Models/User.js';
-import Token from '../Models/Token.js';
+import jwt from "jsonwebtoken";
+import User from "../Models/User.js";
+import Token from "../Models/Token.js";
+import config from "../config/EnvVar.js";
 
-export default async (req,res,next)=>{
+export default async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader) return res.status(401).json({ message: "No token provided." });
+        const token = req.cookies?.token || (req.headers.authorization && req.headers.authorization.split(" "));
 
-        const token = authHeader.split(" ")[1];
+        if (!token) {
+            return res.redirect('/login');
+        }
 
         let decoded;
         try {
             decoded = jwt.verify(token, config.jwt_token);
         } catch (err) {
-            return res.status(401).json({ message: "Invalid or expired token." });
+            res.clearCookie('token');
+            return res.redirect('/login');
         }
 
         const user = await User.findById(decoded.id);
-        if (!user) return res.status(401).json({ message: "User not found." });
+        if (!user) {
+            res.clearCookie('token');
+            return res.redirect('/login');
+        }
 
         const tokenDoc = await Token.findOne({ jti: decoded.jti });
         if (!tokenDoc) {
-            return res.status(401).json({ message: "Token has been revoked. Please login again." });
+            res.clearCookie('token');
+            return res.redirect('/login');
         }
 
         tokenDoc.lastUsedAt = new Date();
@@ -32,6 +38,8 @@ export default async (req,res,next)=>{
         req.tokenDoc = tokenDoc;
         next();        
     } catch (e) {
-        return res.status(401).json({ status: false, message: "token expired. login again", error:e });
+        console.error("Auth Middleware Error: ", e);
+        res.clearCookie('token');
+        return res.redirect('/login');
     }
 }

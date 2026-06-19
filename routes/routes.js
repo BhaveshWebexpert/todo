@@ -1,25 +1,19 @@
-import mongoose from "mongoose";
 import express from "express";
-import User from "../Models/User.js"
-import jwtsecret from "../config/EnvVar.js"
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken"
-import Task from "../Models/Task.js";
-import Auth from '../middlewares/AuthMiddleware.js'
-import crypto from 'crypto'
-import Token from "../Models/Token.js";
-import Usercontroller from '../controllers/UserController.js'
-import Taskcontroller from '../controllers/TaskController.js'
-
+import Auth from '../middlewares/AuthMiddleware.js';
+import Usercontroller from '../controllers/UserController.js';
+import Taskcontroller from '../controllers/TaskController.js';
 const router = express.Router();
 
 router.get("/",(req,res)=>{
-    // If user is login then redirect to the Dashboard or some page else redirect to the login page
-    res.send("Hello world");
+    const token = req.cookies.token;
+    token ? res.redirect("/dashboard") : res.redirect("/login");
 });
 
 router.get("/register", (req,res)=> res.render('AuthPages/Registration') );
 router.get("/login", (req,res)=> res.render("AuthPages/Login") );
+
+router.get("/dashboard", Auth , (req,res)=> res.render('UsersPages/Dashboard') );
+router.get("/tasks", Auth , (req,res)=> res.render('UsersPages/TaskList') );
 
 router.post("/registration", Usercontroller.registerUser);
 router.post("/login", Usercontroller.loginUser);

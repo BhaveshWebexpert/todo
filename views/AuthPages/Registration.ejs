@@ -4,16 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration</title>
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 <body>
     <h1>Registration page</h1>
 
-    <form action="/registration" method="post">
+    <form method="post" id="register" enctype="multipart/form-data">
         <input type="text" name="name" id="name" required placeholder="Enter Full Name"> <br>
         <input type="email" name="email" id="email" required placeholder="Enter Email"> <br>
         <input type="password" name="password" id="password" required placeholder="Enter Password"> <br>
-        <input type="submit" value="Register">
+        <input type="submit" value="Register"> <a href="/login">Login</a>
     </form>
+
+    <script>
+        document.querySelector('#register').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch('/registration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            
+            const result = await response.json();
+            const msg = JSON.stringify(result.message);
+            
+            if (!response.ok) {
+                Toastify({text: "Server Error...",duration: 10000,gravity: "top",position: "right",style: { background: "red" }}).showToast();
+                console.error(`Invalid Server response : ${JSON.stringify(result)}`);
+                return;
+            }
+
+            
+            Toastify({text: msg,duration: 10000,gravity: "top",position: "right",style: { background: "#16a34a" }}).showToast();
+        } catch (err) {
+            Toastify({text: "User side Error...",duration: 10000,gravity: "top",position: "right",style: { background: "red" }}).showToast();
+            console.error(`Fetch error : ${err}`);
+        }
+        });
+    </script>
 
 </body>
 </html>
