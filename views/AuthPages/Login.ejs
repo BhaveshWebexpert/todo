@@ -81,10 +81,9 @@
         return;
                     }
         Toastify({text: msg,duration: 10000,gravity: "top",position: "right",style: { background: "#16a34a" }}).showToast();
-        setTimeout(() => {
         window.location.href="/"
-                    }, 3000);
-                } catch (err) {
+
+        } catch (err) {
         Toastify({text: "User side Error...",duration: 10000,gravity: "top",position: "right",style: { background: "red" }}).showToast();
         console.error(`Fetch error : ${err}`);
                 }
