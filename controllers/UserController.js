@@ -1,15 +1,9 @@
-import mongoose from "mongoose";
-import express from "express";
-import User from "../Models/User.js"
-import jwtsecret from "../config/EnvVar.js"
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken"
-import Task from "../Models/Task.js";
-import Auth from '../middlewares/AuthMiddleware.js'
-import crypto from 'crypto'
+import jwt from "jsonwebtoken";
+import crypto from 'crypto';
+import User from "../Models/User.js";
 import Token from "../Models/Token.js";
-import Usercontroller from '../controllers/UserController.js'
-import Taskcontroller from '../controllers/TaskController.js'
+import jwtsecret from "../config/EnvVar.js";
 
 const registerUser = async (req, res) => {
     try {
