@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken"
 import Task from "../Models/Task.js";
 import Auth from '../middlewares/AuthMiddleware.js'
+import crypto from 'crypto'
+import Token from "../Models/Token.js";
 
 const router = express.Router();
 
@@ -22,13 +24,15 @@ router.get("/login", (req,res)=>{
     res.render("AuthPages/Login");
 });
 
-// router.post("/logout", async (req,res)=>{
-//     try {
-        
-//     } catch (e) {
-        
-//     }
-// });
+router.post("/logout", Auth, async (req, res) => {
+    try {
+        await req.tokenDoc.deleteOne();
+        return res.status(200).json({ status: true, message: "User logged out successfully." });
+    } catch (e) {
+        console.error("Error while logout : ", e);
+        return res.status(500).json({ status: false, message: "oops! something went wrong....", error: e.message });
+    }
+});
 
 router.post("/registration", async (req,res)=>{
     try {
@@ -55,16 +59,19 @@ router.post("/login", async (req,res)=>{
 
         if (!user) return res.status(400).json({ message: "Entered email does not exists."});
 
-        // Match the credentials and if match correctly then dispatch the JWT token else send invalid credentials error
 
         const matching = await bcrypt.compare(password, user.password);
         if (!matching) return res.status(400).json({ message: "Invalid Credentials."});
 
+        const jti = crypto.randomUUID();
+
         const token = jwt.sign(
-                { id: user._id, email: user.email },
-                jwtsecret.jwt_token, 
+                { id: user._id, email: user.email, jti },
+                jwtsecret.jwt_token,
                 { expiresIn: '1h' } 
             );
+
+        await Token.create({user_id: user._id,jti,name: req.body.device_name || "default",expiresAt: new Date(Date.now() + 60*60 * 1000)});
 
         return res.status(200).json({"status":true, message:"User is Login successfully.", token});
 

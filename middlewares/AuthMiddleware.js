@@ -1,19 +1,36 @@
 import jwt from 'jsonwebtoken'
 import config from '../config/EnvVar.js'
+import User from '../Models/User.js';
+import Token from '../Models/Token.js';
 
-export default (req,res,next)=>{
+export default async (req,res,next)=>{
     try {
         const authHeader = req.headers.authorization;
-        const token = authHeader && authHeader.split(' ')[1];
-        
-        if (!token)  return res.status(401).json({ status: false, message: "Access denied. Login session expired , please login again." });
+        if (!authHeader) return res.status(401).json({ message: "No token provided." });
 
-        const decode = jwt.verify(token, config.jwt_token);
+        const token = authHeader.split(" ")[1];
 
-        req.user = {id: decode.id};
+        let decoded;
+        try {
+            decoded = jwt.verify(token, config.jwt_token);
+        } catch (err) {
+            return res.status(401).json({ message: "Invalid or expired token." });
+        }
 
-        next();
-        
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(401).json({ message: "User not found." });
+
+        const tokenDoc = await Token.findOne({ jti: decoded.jti });
+        if (!tokenDoc) {
+            return res.status(401).json({ message: "Token has been revoked. Please login again." });
+        }
+
+        tokenDoc.lastUsedAt = new Date();
+        await tokenDoc.save();
+
+        req.user = user;
+        req.tokenDoc = tokenDoc;
+        next();        
     } catch (e) {
         return res.status(401).json({ status: false, message: "token expired. login again", error:e });
     }
