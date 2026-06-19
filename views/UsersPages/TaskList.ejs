@@ -1,11 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Task List</title>
-</head>
-<body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 30px;
+        color: #222;
+      }
+
+      h1 {
+        margin-bottom: 5px;
+      }
+
+      h3 {
+        margin-top: 30px;
+      }
+
+      a {
+        display: inline-block;
+        margin-bottom: 25px;
+        color: #2563eb;
+        text-decoration: none;
+      }
+
+      /* Form */
+      #taskForm {
+        margin-bottom: 20px;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      textarea,
+      select {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+
+      textarea {
+        width: 250px;
+        resize: vertical;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-block;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        color: #fff;
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+      }
+
+      .btn-primary { background: #2563eb; }
+      .btn-success { background: #16a34a; }
+      .btn-danger  { background: #dc2626; }
+      .btn-secondary { background: #6b7280; }
+
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+
+      th, td {
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        text-align: left;
+      }
+
+      th {
+        background: #f3f4f6;
+      }
+
+      tr:nth-child(even) {
+        background: #fafafa;
+      }
+
+      /* Status badge */
+      .status-badge {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+
+      .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .status-completed {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      /* Modal */
+      #updateModal > div {
+        background: #fff;
+        padding: 20px;
+        width: 300px;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
     <h1>Task List</h1>
-</body>
+    <form id="taskForm">
+      <input
+        type="text"
+        name="title"
+        id="title"
+        required
+        placeholder="Enter Title"
+      />
+      <br />
+      <textarea
+        name="description"
+        id="description"
+        placeholder="Description...(optional)"
+      ></textarea>
+      <br />
+      <input type="date" name="due" id="due" required /> <br />
+      <input type="hidden" name="status" value="true" required />
+      <input type="submit" value="Add Task" class="btn btn-primary" />
+    </form>
+    <br />
+    <table id="taskTable">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th>Created At</th>
+          <th>Action</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody id="taskTableBody"></tbody>
+    </table>
+    <a href="/dashboard">Dashboard</a>
+    <form action="/logout" method="POST" style="display: inline; margin-left: 10px;">
+      <button type="submit" class="btn btn-secondary">Logout</button>
+    </form>
+
+    <!-- Update popup -->
+    <div
+      id="updateModal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div>
+        <h3 style="margin-top: 0;">Update Task</h3>
+        <form id="updateForm">
+          <input type="hidden" id="updateId" name="id" />
+          <input
+            type="text"
+            id="updateTitle"
+            name="title"
+            placeholder="New title (leave blank to keep)"
+          />
+          <br /><br />
+          <textarea
+            id="updateDescription"
+            name="description"
+            placeholder="New description (leave blank to keep)"
+          ></textarea>
+          <br /><br />
+          <input type="date" id="updateDue" name="due" /> <br /><br />
+          <select id="updateStatus" name="status">
+            <option value="">-- Keep current status --</option>
+            <option value="true">Completed</option>
+            <option value="false">Pending</option>
+          </select>
+          <br /><br />
+          <button type="submit" class="btn btn-success">Update Task</button>
+          <button type="button" id="closeModalBtn" class="btn btn-secondary">Cancel</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      async function loadTasks() {
+        try {
+          const response = await fetch("/read");
+          const result = await response.json();
+          const msg = JSON.stringify(result.message);
+          if (!response.ok) {
+            Toastify({
+              text: "Server Error...",
+              duration: 10000,
+              gravity: "top",
+              position: "right",
+              style: { background: "red" },
+            }).showToast();
+            console.error(
+              `Invalid Server response : ${JSON.stringify(result)}`,
+            );
+            return;
+          }
+          let data = result.data;
+          console.log(data);
+          const tbody = document.getElementById("taskTableBody");
+          tbody.innerHTML = "";
+          data.forEach((task) => {
+            const row = document.createElement("tr");
+            const statusClass = task.status ? "status-completed" : "status-pending";
+            const statusText = task.status ? "Completed" : "Pending";
+            row.innerHTML = `
+                                            <td>${task.title}</td>
+                                            <td>${task.description}</td>
+                                            <td>${new Date(task.due).toLocaleDateString()}</td>
+                                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                                            <td>${task.created_at ? new Date(task.created_at).toLocaleString() : "-"}</td>
+                                            <td><button class="btn btn-primary update-btn" data-id="${task._id}">Update</button></td>
+                                            <td><button class="btn btn-danger delete-btn" data-id="${task._id}">Delete</button></td>
+                                        `;
+            tbody.appendChild(row);
+          });
+          return;
+        } catch (err) {
+          Toastify({
+            text: "User side Error...",
+            duration: 10000,
+            gravity: "top",
+            position: "right",
+            style: { background: "red" },
+          }).showToast();
+          console.error(`Fetch error : ${err}`);
+        }
+      }
+      document.addEventListener("DOMContentLoaded", loadTasks);
+      document
+        .getElementById("taskForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          try {
+            const formData = new FormData(e.target);
+            const body = Object.fromEntries(formData.entries());
+            const response = await fetch("/add", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+              Toastify({
+                text: "Server Error...",
+                duration: 10000,
+                gravity: "top",
+                position: "right",
+                style: { background: "red" },
+              }).showToast();
+              console.error(
+                `Invalid Server response : ${JSON.stringify(result)}`,
+              );
+              return;
+            }
+            Toastify({
+              text: "Task added successfully!",
+              duration: 5000,
+              gravity: "top",
+              position: "right",
+              style: { background: "green" },
+            }).showToast();
+            e.target.reset();
+            loadTasks();
+          } catch (err) {
+            Toastify({
+              text: "User side Error...",
+              duration: 10000,
+              gravity: "top",
+              position: "right",
+              style: { background: "red" },
+            }).showToast();
+            console.error(`Fetch error : ${err}`);
+          }
+        });
+      function openUpdateModal(id) {
+        document.getElementById("updateId").value = id;
+        document.getElementById("updateModal").style.display = "flex";
+      }
+      function closeUpdateModal() {
+        document.getElementById("updateForm").reset();
+        document.getElementById("updateModal").style.display = "none";
+      }
+      document
+        .getElementById("closeModalBtn")
+        .addEventListener("click", closeUpdateModal);
+      document
+        .getElementById("taskTableBody")
+        .addEventListener("click", (e) => {
+          if (e.target.classList.contains("update-btn")) {
+            openUpdateModal(e.target.dataset.id);
+          } else if (e.target.classList.contains("delete-btn")) {
+            deleteTask(e.target.dataset.id);
+          }
+        });
+      document
+        .getElementById("updateForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          try {
+            const formData = new FormData(e.target);
+            const body = { id: formData.get("id") }; // mandatory
+            const title = formData.get("title");
+            if (title) body.title = title;
+            const description = formData.get("description");
+            if (description) body.description = description;
+            const due = formData.get("due");
+            if (due) body.due = due;
+            const status = formData.get("status");
+            if (status) body.status = status === "true";
+            if (Object.keys(body).length === 1) {
+              Toastify({
+                text: "Please change at least one field",
+                duration: 5000,
+                gravity: "top",
+                position: "right",
+                style: { background: "orange" },
+              }).showToast();
+              return;
+            }
+            const response = await fetch("/update", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+              Toastify({
+                text: "Server Error...",
+                duration: 10000,
+                gravity: "top",
+                position: "right",
+                style: { background: "red" },
+              }).showToast();
+              console.error(
+                `Invalid Server response : ${JSON.stringify(result)}`,
+              );
+              return;
+            }
+            Toastify({
+              text: "Task updated successfully!",
+              duration: 5000,
+              gravity: "top",
+              position: "right",
+              style: { background: "green" },
+            }).showToast();
+            closeUpdateModal();
+            loadTasks();
+          } catch (err) {
+            Toastify({
+              text: "User side Error...",
+              duration: 10000,
+              gravity: "top",
+              position: "right",
+              style: { background: "red" },
+            }).showToast();
+            console.error(`Fetch error : ${err}`);
+          }
+        });
+      async function deleteTask(id) {
+        if (!confirm("Are you sure you want to delete this task?")) return;
+        try {
+          const response = await fetch("/delete", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id }),
+          });
+          const result = await response.json();
+          if (!response.ok) {
+            Toastify({
+              text: "Server Error...",
+              duration: 10000,
+              gravity: "top",
+              position: "right",
+              style: { background: "red" },
+            }).showToast();
+            console.error(
+              `Invalid Server response : ${JSON.stringify(result)}`,
+            );
+            return;
+          }
+          Toastify({
+            text: "Task deleted successfully!",
+            duration: 5000,
+            gravity: "top",
+            position: "right",
+            style: { background: "green" },
+          }).showToast();
+          loadTasks();
+        } catch (err) {
+          Toastify({
+            text: "User side Error...",
+            duration: 10000,
+            gravity: "top",
+            position: "right",
+            style: { background: "red" },
+          }).showToast();
+          console.error(`Fetch error : ${err}`);
+        }
+      }
+    </script>
+  </body>
 </html>

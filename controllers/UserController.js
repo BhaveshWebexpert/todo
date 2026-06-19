@@ -64,7 +64,7 @@ const loginUser = async (req, res) => {
 const logoutUser = async (req, res) => {
     try {
         await req.tokenDoc.deleteOne();
-        return res.status(200).json({ status: true, message: "User logged out successfully." });
+        return res.redirect('/');
     } catch (e) {
         console.error("Error while logout : ", e);
         return res.status(500).json({ status: false, message: "oops! something went wrong....", error: e.message });

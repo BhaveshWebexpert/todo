@@ -24,6 +24,21 @@ const ReadTasks = async (req, res) => {
     }
 };
 
+const DashboardData = async (req,res)=>{
+    try {
+        const pendingCount = await Task.countDocuments({status:false})
+        const completedCount = await Task.countDocuments({status:true})
+
+        const pendingTask = await Task.find({ user_id: req.user.id , status:false});
+        console.log(pendingTask);
+        return res.status(200).json({ status: true, message: "Data are fetched successfully.", data: [pendingTask, {"pendingCount":pendingCount}, {"completedCount":completedCount}] });
+
+    } catch (e) {
+        console.error("Error in DashboardData from TaskController : ", e);
+        return res.status(500).json({ status: false, message: "oops! something went wrong....", error: e });
+    }
+}
+
 const UpdateTask = async (req, res) => {
     try {
         const { id, title, description, status, due } = req.body;      
@@ -76,6 +91,7 @@ const DeleteTask = async (req, res) => {
 export default {
     AddTask,
     ReadTasks,
+    DashboardData,
     UpdateTask,
     DeleteTask
 };

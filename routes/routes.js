@@ -20,6 +20,7 @@ router.post("/login", Usercontroller.loginUser);
 
 router.post("/add", Auth , Taskcontroller.AddTask);
 router.get("/read", Auth, Taskcontroller.ReadTasks);
+router.get("/dashboard_data", Auth, Taskcontroller.DashboardData)
 router.put("/update", Auth, Taskcontroller.UpdateTask);
 router.delete("/delete", Auth, Taskcontroller.DeleteTask);
 
