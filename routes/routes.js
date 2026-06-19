@@ -8,6 +8,8 @@ import Task from "../Models/Task.js";
 import Auth from '../middlewares/AuthMiddleware.js'
 import crypto from 'crypto'
 import Token from "../Models/Token.js";
+import Usercontroller from '../controllers/UserController.js'
+import Taskcontroller from '../controllers/TaskController.js'
 
 const router = express.Router();
 
@@ -16,143 +18,17 @@ router.get("/",(req,res)=>{
     res.send("Hello world");
 });
 
-router.get("/register", (req,res)=>{
-    res.render('AuthPages/Registration');
-});
+router.get("/register", (req,res)=> res.render('AuthPages/Registration') );
+router.get("/login", (req,res)=> res.render("AuthPages/Login") );
 
-router.get("/login", (req,res)=>{
-    res.render("AuthPages/Login");
-});
+router.post("/registration", Usercontroller.registerUser);
+router.post("/login", Usercontroller.loginUser);
 
-router.post("/logout", Auth, async (req, res) => {
-    try {
-        await req.tokenDoc.deleteOne();
-        return res.status(200).json({ status: true, message: "User logged out successfully." });
-    } catch (e) {
-        console.error("Error while logout : ", e);
-        return res.status(500).json({ status: false, message: "oops! something went wrong....", error: e.message });
-    }
-});
+router.post("/add", Auth , Taskcontroller.AddTask);
+router.get("/read", Auth, Taskcontroller.ReadTasks);
+router.put("/update", Auth, Taskcontroller.UpdateTask);
+router.delete("/delete", Auth, Taskcontroller.DeleteTask);
 
-router.post("/registration", async (req,res)=>{
-    try {
-        const {name,email,password} = req.body;
-        const existingUser = await User.findOne({ email });
-
-        if (existingUser) return res.status(400).json({ message: "Email is already registered" });
-
-        const user = new User({name,email,password});
-        await user.save();
-
-        return res.redirect('/login');
-
-    } catch (e) {
-        console.error("Error while registering user : ",e);
-        return res.status(500).json({"status":false, message:"oops! something went wrong....", "error":e});
-    }
-});
-
-router.post("/login", async (req,res)=>{
-    try {
-        const {email,password} = req.body;
-        const user = await User.findOne({ email });
-
-        if (!user) return res.status(400).json({ message: "Entered email does not exists."});
-
-
-        const matching = await bcrypt.compare(password, user.password);
-        if (!matching) return res.status(400).json({ message: "Invalid Credentials."});
-
-        const jti = crypto.randomUUID();
-
-        const token = jwt.sign(
-                { id: user._id, email: user.email, jti },
-                jwtsecret.jwt_token,
-                { expiresIn: '1h' } 
-            );
-
-        await Token.create({user_id: user._id,jti,name: req.body.device_name || "default",expiresAt: new Date(Date.now() + 60*60 * 1000)});
-
-        return res.status(200).json({"status":true, message:"User is Login successfully.", token});
-
-    } catch (e) {
-        console.error("Error while Login user : ",e);
-        return res.status(500).json({"status":false, message:"oops! something went wrong....", "error":e});
-    }
-});
-
-router.post("/add", Auth , async (req,res)=>{
-    try {
-        const {title, description, status, due} = req.body;
-        const user_id = req.user.id;
-        const task = new Task({user_id, title, description, status, due});
-        await task.save();
-
-        return res.status(200).json({"status":true, message:"Task is added successfully.", "data":task});
-
-    } catch (e) {
-        console.error("Error in while adding task : ",e);
-        return res.status(500).json({"status":false, message:"oops! something went wrong....", "error":e});
-    }
-})
-
-router.get("/read", Auth, async (req,res)=>{
-    try {
-        const task = await Task.find({user_id:req.user.id});
-        return res.status(200).json({"status":true, message:"Task are fetched successfully.", "data":task});
-    } catch (e) {
-        console.error("Error in while fetching task : ",e);
-        return res.status(500).json({"status":false, message:"oops! something went wrong....", "error":e});
-    }
-});
-
-router.put("/update", Auth, async (req,res)=>{
-    try {
-        const {id,title,description,status,due} = req.body;      
-        if (!id) return res.status(400).json({ status: false, message: "Task ID is compulsory." });
-        
-        const updateData = {};
-        if (title !== undefined) updateData.title = title;
-        if (description !== undefined) updateData.description = description;
-        if (status !== undefined) updateData.status = status;
-        if (due !== undefined) updateData.due = due;
-
-        const updatedTask = await Task.findOneAndUpdate(
-            { 
-                _id: id,              
-                user_id: req.user.id  
-            }, 
-            { $set: updateData },    
-            { 
-                new: true,
-                runValidators: true
-            }
-        );
-
-        if (!updatedTask) return res.status(404).json({ status: false, message: "Task doe not exist or you can not edit others tasks." });
-
-        return res.status(200).json({ status: true, message: "Task is updated successfully.", task: updatedTask });
-
-    } catch (e) {
-        console.error("Error in while updating task : ",e);
-        return res.status(500).json({"status":false, message:"oops! something went wrong....", "error":e});
-    }
-})
-
-router.delete("/delete", Auth, async (req,res)=>{
-    try {
-        const {id} = req.body;
-        
-        if (!id) return res.status(400).json({ status: false, message: "Task ID is compulsory." });
-
-        const del = await Task.findByIdAndDelete(id);
-
-        return res.status(200).json({"status":true, message:"Task is removed successfully.", "data":del});
-
-    } catch (e) {
-        console.error("Error in while deleting task : ",e);
-        return res.status(500).json({"status":false, message:"oops! something went wrong....", "error":e});
-    }
-});
+router.post("/logout", Auth, Usercontroller.logoutUser);
 
 export default router;
