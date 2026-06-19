@@ -1,34 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Dashboard</title>
-<style>
-    body {
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <style>
+      body {
         font-family: Arial, sans-serif;
         margin: 30px;
         color: #222;
-    }
+      }
 
-    h1 {
+      h1 {
         margin-bottom: 5px;
-    }
+      }
 
-    a {
+      a {
         display: inline-block;
         margin-bottom: 25px;
         color: #2563eb;
         text-decoration: none;
-    }
+      }
 
-    /* Cards */
-    .cards {
+      /* Cards */
+      .cards {
         display: flex;
         gap: 20px;
         margin-bottom: 30px;
-    }
+      }
 
-    .card {
+      .card {
         flex: 1;
         max-width: 220px;
         padding: 20px;
@@ -36,124 +36,135 @@
         border-radius: 8px;
         text-align: center;
         background: #fafafa;
-    }
+      }
 
-    .card h2 {
+      .card h2 {
         margin: 0 0 5px 0;
         font-size: 32px;
-    }
+      }
 
-    .card p {
+      .card p {
         margin: 0;
         color: #666;
-    }
+      }
 
-    .card.pending h2 { color: #d97706; }
-    .card.completed h2 { color: #16a34a; }
+      .card.pending h2 {
+        color: #d97706;
+      }
+      .card.completed h2 {
+        color: #16a34a;
+      }
 
-    /* Table */
-    table {
+      /* Table */
+      table {
         width: 100%;
         border-collapse: collapse;
-    }
+      }
 
-    th, td {
+      th,
+      td {
         border: 1px solid #ddd;
         padding: 10px 12px;
         text-align: left;
-    }
+      }
 
-    th {
+      th {
         background: #f3f4f6;
-    }
+      }
 
-    tr:nth-child(even) {
+      tr:nth-child(even) {
         background: #fafafa;
-    }
+      }
 
-    .status-badge {
+      .status-badge {
         padding: 3px 8px;
         border-radius: 4px;
         font-size: 13px;
         background: #fef3c7;
         color: #92400e;
-    }
-</style>
-</head>
-<body>
+      }
+    </style>
+  </head>
+  <body>
     <h1>Dashboard</h1>
     <a href="/tasks">Task Section</a>
 
     <div class="cards">
-        <div class="card pending">
-            <h2 id="pendingCount">-</h2>
-            <p>Pending Tasks</p>
-        </div>
-        <div class="card completed">
-            <h2 id="completedCount">-</h2>
-            <p>Completed Tasks</p>
-        </div>
+      <div class="card pending">
+        <h2 id="pendingCount">-</h2>
+        <p>Pending Tasks</p>
+      </div>
+      <div class="card completed">
+        <h2 id="completedCount">-</h2>
+        <p>Completed Tasks</p>
+      </div>
     </div>
 
     <h3>Pending Tasks</h3>
     <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Description</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Created At</th>
-            </tr>
-        </thead>
-        <tbody id="taskTableBody">
-            <tr><td colspan="5">Loading...</td></tr>
-        </tbody>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody id="taskTableBody">
+        <tr>
+          <td colspan="5">Loading...</td>
+        </tr>
+      </tbody>
     </table>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const response = await fetch('/dashboard_data');
-                const result = await response.json();
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          const response = await fetch("/dashboard_data");
+          const result = await response.json();
 
-                // data[0] = pendingTask list, data[1] = {pendingCount}, data[2] = {completedCount}
-                const pendingTasks = result.data[0] || [];
-                const pendingCount = result.data[1].pendingCount;
-                const completedCount = result.data[2].completedCount;
+          // data[0] = pendingTask list, data[1] = {pendingCount}, data[2] = {completedCount}
+          const pendingTasks = result.data[0] || [];
+          const pendingCount = result.data[1].pendingCount;
+          const completedCount = result.data[2].completedCount;
 
-                document.getElementById('pendingCount').textContent = pendingCount;
-                document.getElementById('completedCount').textContent = completedCount;
+          document.getElementById("pendingCount").textContent = pendingCount;
+          document.getElementById("completedCount").textContent =
+            completedCount;
 
-                const tbody = document.getElementById('taskTableBody');
-                tbody.innerHTML = '';
+          const tbody = document.getElementById("taskTableBody");
+          tbody.innerHTML = "";
 
-                if (pendingTasks.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5">No pending tasks.</td></tr>';
-                    return;
-                }
+          if (pendingTasks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">No pending tasks.</td></tr>';
+            return;
+          }
 
-                pendingTasks.forEach(task => {
-                    const dueDate = task.due ? new Date(task.due).toLocaleDateString() : '-';
-                    const createdAt = task.created_at ? new Date(task.created_at).toLocaleDateString() : '-';
+          pendingTasks.forEach((task) => {
+            const dueDate = task.due
+              ? new Date(task.due).toLocaleDateString()
+              : "-";
+            const createdAt = task.created_at
+              ? new Date(task.created_at).toLocaleDateString()
+              : "-";
 
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${task.title || '-'}</td>
-                        <td>${task.description || '-'}</td>
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                        <td>${task.title || "-"}</td>
+                        <td>${task.description || "-"}</td>
                         <td>${dueDate}</td>
                         <td><span class="status-badge">Pending</span></td>
                         <td>${createdAt}</td>
                     `;
-                    tbody.appendChild(row);
-                });
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('taskTableBody').innerHTML =
-                    '<tr><td colspan="5">Failed to load tasks.</td></tr>';
-            }
-        });
+            tbody.appendChild(row);
+          });
+        } catch (e) {
+          console.error(e);
+          document.getElementById("taskTableBody").innerHTML =
+            '<tr><td colspan="5">Failed to load tasks.</td></tr>';
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
