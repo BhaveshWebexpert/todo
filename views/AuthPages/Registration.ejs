@@ -114,7 +114,7 @@
             const msg = JSON.stringify(result.message);
             if (!response.ok) {
               Toastify({
-                text: "Server Error...",
+                text: result.message,
                 duration: 10000,
                 gravity: "top",
                 position: "right",
@@ -132,6 +132,11 @@
               position: "right",
               style: { background: "#16a34a" },
             }).showToast();
+
+            setTimeout(() => {
+              window.location.href="/";
+            }, 2000);
+
           } catch (err) {
             Toastify({
               text: "User side Error...",

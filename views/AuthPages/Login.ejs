@@ -95,7 +95,7 @@
           localStorage.setItem("token", JSON.stringify(result.token));
           if (!response.ok) {
             Toastify({
-              text: result.error,
+              text: result.message,
               duration: 10000,
               gravity: "top",
               position: "right",

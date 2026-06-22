@@ -228,15 +228,13 @@
           const msg = JSON.stringify(result.message);
           if (!response.ok) {
             Toastify({
-              text: "Server Error...",
+              text: result.message,
               duration: 10000,
               gravity: "top",
               position: "right",
               style: { background: "red" },
             }).showToast();
-            console.error(
-              `Invalid Server response : ${JSON.stringify(result)}`,
-            );
+            console.error(`Invalid Server response : ${JSON.stringify(result)}`);
             return;
           }
           let data = result.data;
@@ -245,9 +243,7 @@
           tbody.innerHTML = "";
           data.forEach((task) => {
             const row = document.createElement("tr");
-            const statusClass = task.status
-              ? "status-completed"
-              : "status-pending";
+            const statusClass = task.status ? "status-completed" : "status-pending";
             const statusText = task.status ? "Completed" : "Pending";
             row.innerHTML = `
                                             <td>${task.title}</td>
@@ -272,7 +268,10 @@
           console.error(`Fetch error : ${err}`);
         }
       }
+      
       document.addEventListener("DOMContentLoaded", loadTasks);
+      
+      // ==================== ADD TASK FORM HANDLER ====================
       document
         .getElementById("taskForm")
         .addEventListener("submit", async (e) => {
@@ -286,19 +285,33 @@
               body: JSON.stringify(body),
             });
             const result = await response.json();
+            
             if (!response.ok) {
-              Toastify({
-                text: "Server Error...",
-                duration: 10000,
-                gravity: "top",
-                position: "right",
-                style: { background: "red" },
-              }).showToast();
-              console.error(
-                `Invalid Server response : ${JSON.stringify(result)}`,
-              );
+              // LOOP THROUGH THE VALIDATION ARRAY HERE
+              if (result.errors && Array.isArray(result.errors)) {
+                result.errors.forEach((errorMessage) => {
+                  Toastify({
+                    text: errorMessage,
+                    duration: 10000,
+                    gravity: "top",
+                    position: "right",
+                    style: { background: "red" },
+                  }).showToast();
+                });
+              } else {
+                Toastify({
+                  text: result.message,
+                  duration: 10000,
+                  gravity: "top",
+                  position: "right",
+                  style: { background: "red" },
+                }).showToast();
+              }
+              
+              console.error(`Invalid Server response : ${JSON.stringify(result)}`);
               return;
             }
+            
             Toastify({
               text: "Task added successfully!",
               duration: 5000,
@@ -310,7 +323,7 @@
             loadTasks();
           } catch (err) {
             Toastify({
-              text: "User side Error...",
+              text: "User side Error...2",
               duration: 10000,
               gravity: "top",
               position: "right",
@@ -319,6 +332,7 @@
             console.error(`Fetch error : ${err}`);
           }
         });
+        
       function openUpdateModal(id) {
         document.getElementById("updateId").value = id;
         document.getElementById("updateModal").style.display = "flex";
@@ -372,15 +386,13 @@
             const result = await response.json();
             if (!response.ok) {
               Toastify({
-                text: "Server Error...",
+                text: result.message,
                 duration: 10000,
                 gravity: "top",
                 position: "right",
                 style: { background: "red" },
               }).showToast();
-              console.error(
-                `Invalid Server response : ${JSON.stringify(result)}`,
-              );
+              console.error(`Invalid Server response : ${JSON.stringify(result)}`);
               return;
             }
             Toastify({
@@ -414,15 +426,13 @@
           const result = await response.json();
           if (!response.ok) {
             Toastify({
-              text: "Server Error...",
+              text: result.message,
               duration: 10000,
               gravity: "top",
               position: "right",
               style: { background: "red" },
             }).showToast();
-            console.error(
-              `Invalid Server response : ${JSON.stringify(result)}`,
-            );
+            console.error(`Invalid Server response : ${JSON.stringify(result)}`);
             return;
           }
           Toastify({

@@ -26,8 +26,8 @@ const ReadTasks = async (req, res) => {
 
 const DashboardData = async (req,res)=>{
     try {
-        const pendingCount = await Task.countDocuments({status:false})
-        const completedCount = await Task.countDocuments({status:true})
+        const pendingCount = await Task.countDocuments({status:false, user_id:req.user.id})
+        const completedCount = await Task.countDocuments({status:true, user_id:req.user.id})
 
         const pendingTask = await Task.find({ user_id: req.user.id , status:false});
         console.log(pendingTask);
