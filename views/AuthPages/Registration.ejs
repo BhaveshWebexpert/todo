@@ -98,35 +98,48 @@
       <a href="/login">Login</a>
     </form>
     <script>
-      document
-        .querySelector("#register")
-        .addEventListener("submit", async (e) => {
+      document.querySelector("#register").addEventListener("submit", async (e) => {
           e.preventDefault();
           const formData = new FormData(e.target);
           const payload = Object.fromEntries(formData.entries());
+          
           try {
             const response = await fetch("/registration", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload),
             });
+            
             const result = await response.json();
             const msg = JSON.stringify(result.message);
+            
             if (!response.ok) {
-              Toastify({
-                text: result.message,
-                duration: 10000,
-                gravity: "top",
-                position: "right",
-                style: { background: "red" },
-              }).showToast();
-              console.error(
-                `Invalid Server response : ${JSON.stringify(result)}`,
-              );
+              if (result.errors && Array.isArray(result.errors)) {
+                result.errors.forEach((errorMessage) => {
+                  Toastify({
+                    text: errorMessage,
+                    duration: 10000,
+                    gravity: "top",
+                    position: "right",
+                    style: { background: "red" },
+                  }).showToast();
+                });
+              } else {
+                Toastify({
+                  text: result.message || "Registration failed",
+                  duration: 10000,
+                  gravity: "top",
+                  position: "right",
+                  style: { background: "red" },
+                }).showToast();
+              }
+              
+              console.error(`Invalid Server response : ${JSON.stringify(result)}`);
               return;
             }
+            
             Toastify({
-              text: msg,
+              text: msg.replace(/"/g, ''),
               duration: 10000,
               gravity: "top",
               position: "right",

@@ -3,6 +3,7 @@ import Auth from '../middlewares/AuthMiddleware.js';
 import Usercontroller from '../controllers/UserController.js';
 import Taskcontroller from '../controllers/TaskController.js';
 import { validateTask } from "../Validation/TaskValidation.js";
+import { validateUser } from "../Validation/UserValidation.js";
 const router = express.Router();
 
 router.get("/",(req,res)=>{
@@ -20,7 +21,7 @@ router.post("/registration", Usercontroller.registerUser);
 router.post("/login", Usercontroller.loginUser);
 
 router.post("/add", Auth, validateTask, Taskcontroller.AddTask);
-router.get("/read", Auth, Taskcontroller.ReadTasks);
+router.get("/read", Auth, validateUser, Taskcontroller.ReadTasks);
 router.get("/dashboard_data", Auth, Taskcontroller.DashboardData)
 router.put("/update", Auth, Taskcontroller.UpdateTask);
 router.delete("/delete", Auth, Taskcontroller.DeleteTask);
